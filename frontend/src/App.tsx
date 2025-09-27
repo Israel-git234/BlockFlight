@@ -16,7 +16,7 @@ import { NotificationsProvider } from './components/NotificationsProvider'
 import NotificationBell from './components/NotificationBell'
 
 function App() {
-  const [selectedFeature, setSelectedFeature] = useState<string>('market-aviator')
+  const [selectedFeature, setSelectedFeature] = useState<string>('dashboard')
   const [account, setAccount] = useState<string | null>(null)
   const [chainId, setChainId] = useState<number | null>(null)
 
@@ -52,8 +52,8 @@ function App() {
   const features = [
     {
       id: 'market-aviator',
-      name: 'Market Aviator',
-      description: 'Predict market volatility in this crash game',
+      name: 'BlockFlight',
+      description: 'Market-driven crash game powered by ETH volatility',
       icon: '✈️',
       status: 'Live',
       color: 'from-red-500 to-orange-500'
@@ -75,6 +75,14 @@ function App() {
       color: 'from-blue-500 to-cyan-500'
     },
     {
+      id: 'leaderboard',
+      name: 'Leaderboard',
+      description: 'Compete with top players and unlock achievements',
+      icon: '🏆',
+      status: 'Live',
+      color: 'from-yellow-500 to-orange-500'
+    },
+    {
       id: 'trading-pools',
       name: 'Trading Pools',
       description: 'Collaborative prediction pools',
@@ -89,26 +97,13 @@ function App() {
       icon: '🏆',
       status: 'Coming Soon',
       color: 'from-purple-500 to-pink-500'
-    },
-    {
-      id: 'leaderboard',
-      name: 'Leaderboard',
-      description: 'Compete with top players and unlock achievements',
-      icon: '🏆',
-      status: 'Live',
-      color: 'from-yellow-500 to-orange-500'
     }
   ]
 
   const renderFeature = () => {
     switch (selectedFeature) {
       case 'market-aviator':
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <MarketAviator account={account} chainId={chainId} />
-            <LiveStats />
-          </div>
-        )
+        return <MarketAviator account={account} chainId={chainId} />
       case 'cruise-mode':
         return <CruiseMode account={account} chainId={chainId} />
       case 'community-market':
@@ -119,13 +114,13 @@ function App() {
         return <NFTRewards account={account} chainId={chainId} />
       case 'leaderboard':
         return <Leaderboard />
+      case 'dashboard':
       default:
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <MarketAviator account={account} chainId={chainId} />
-            <LiveStats />
-          </div>
-        )
+        return <FeatureSelector 
+          features={features}
+          selectedFeature={selectedFeature}
+          onSelectFeature={setSelectedFeature}
+        />
     }
   }
 
@@ -159,7 +154,8 @@ function App() {
     logo: {
       display: 'flex',
       alignItems: 'center',
-      gap: '1rem'
+      gap: '1rem',
+      cursor: 'pointer'
     },
     logoIcon: {
       fontSize: '2.5rem',
@@ -195,13 +191,48 @@ function App() {
                   'linear-gradient(45deg, #f59e0b, #d97706)',
       color: 'white'
     },
+    navigation: {
+      display: 'flex',
+      gap: '0.5rem',
+      alignItems: 'center'
+    },
+    navButton: {
+      padding: '0.5rem 1rem',
+      borderRadius: '0.75rem',
+      border: '2px solid rgba(0, 255, 255, 0.3)',
+      background: 'rgba(0, 0, 0, 0.3)',
+      color: '#d1d5db',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      fontSize: '0.875rem',
+      fontWeight: 'bold'
+    },
+    navButtonActive: {
+      background: 'linear-gradient(45deg, #00ffff, #8b5cf6)',
+      color: 'white',
+      boxShadow: '0 4px 15px rgba(0, 255, 255, 0.3)'
+    },
     main: {
       maxWidth: '1400px',
       margin: '0 auto',
-      padding: '2rem 1.5rem'
+      padding: selectedFeature === 'dashboard' ? '2rem 1.5rem' : '1rem 1.5rem',
+      minHeight: 'calc(100vh - 80px)'
     },
-    featureSelectorWrapper: {
-      marginBottom: '2rem'
+    backButton: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: '0.75rem 1.5rem',
+      borderRadius: '1rem',
+      border: '2px solid rgba(0, 255, 255, 0.3)',
+      background: 'rgba(0, 0, 0, 0.3)',
+      color: '#d1d5db',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      fontSize: '1rem',
+      fontWeight: 'bold',
+      marginBottom: '2rem',
+      maxWidth: 'fit-content'
     }
   }
 
@@ -261,7 +292,7 @@ function App() {
       {/* Header */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
-          <div style={styles.logo}>
+          <div style={styles.logo} onClick={() => setSelectedFeature('dashboard')}>
             <div style={styles.logoIcon}>🚀</div>
             <div>
               <div style={styles.logoText}>BlockFlight</div>
@@ -270,6 +301,46 @@ function App() {
           </div>
           
           <div style={styles.headerRight}>
+            {/* Navigation */}
+            <div style={styles.navigation}>
+              <div
+                style={{
+                  ...styles.navButton,
+                  ...(selectedFeature === 'dashboard' ? styles.navButtonActive : {})
+                }}
+                onClick={() => setSelectedFeature('dashboard')}
+              >
+                🏠 Dashboard
+              </div>
+              <div
+                style={{
+                  ...styles.navButton,
+                  ...(selectedFeature === 'market-aviator' ? styles.navButtonActive : {})
+                }}
+                onClick={() => setSelectedFeature('market-aviator')}
+              >
+                ✈️ BlockFlight
+              </div>
+              <div
+                style={{
+                  ...styles.navButton,
+                  ...(selectedFeature === 'community-market' ? styles.navButtonActive : {})
+                }}
+                onClick={() => setSelectedFeature('community-market')}
+              >
+                🧠 Market
+              </div>
+              <div
+                style={{
+                  ...styles.navButton,
+                  ...(selectedFeature === 'leaderboard' ? styles.navButtonActive : {})
+                }}
+                onClick={() => setSelectedFeature('leaderboard')}
+              >
+                🏆 Leaderboard
+              </div>
+            </div>
+
             <div style={styles.networkBadge}>
               {chainId === 1043 ? '✅ BlockDAG' : '⚠️ Switch Network'}
             </div>
@@ -281,14 +352,23 @@ function App() {
 
       {/* Main Content */}
       <main style={styles.main}>
-        {/* Feature Selector */}
-        <div style={styles.featureSelectorWrapper}>
-          <FeatureSelector 
-            features={features}
-            selectedFeature={selectedFeature}
-            onSelectFeature={setSelectedFeature}
-          />
-        </div>
+        {/* Back Button for individual features */}
+        {selectedFeature !== 'dashboard' && (
+          <div
+            style={styles.backButton}
+            onClick={() => setSelectedFeature('dashboard')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 255, 255, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.6)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.3)'
+              e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.3)'
+            }}
+          >
+            ← Back to Dashboard
+          </div>
+        )}
 
         {/* Selected Feature */}
         {renderFeature()}

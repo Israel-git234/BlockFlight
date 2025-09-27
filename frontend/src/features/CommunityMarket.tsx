@@ -231,6 +231,41 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
   }
 
   const styles = {
+    container: {
+      background: 'rgba(0, 0, 0, 0.6)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '2rem',
+      padding: '3rem',
+      border: '2px solid rgba(0, 255, 255, 0.2)',
+      maxWidth: '100%',
+      margin: '0 auto',
+      position: 'relative' as const,
+      overflow: 'hidden' as const,
+      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 255, 255, 0.1)',
+      minHeight: 'calc(100vh - 200px)'
+    },
+    title: {
+      fontSize: '3rem',
+      fontWeight: 'bold',
+      marginBottom: '1rem',
+      background: 'linear-gradient(45deg, #00ffff, #8b5cf6, #00ff88, #00ffff)',
+      backgroundSize: '400% 400%',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      textAlign: 'center' as const,
+      animation: 'gradientShift 3s ease-in-out infinite',
+      textShadow: '0 0 30px rgba(0, 255, 255, 0.5)'
+    },
+    subtitle: {
+      fontSize: '1.25rem',
+      color: '#d1d5db',
+      textAlign: 'center' as const,
+      marginBottom: '3rem',
+      maxWidth: '700px',
+      margin: '0 auto 3rem auto',
+      lineHeight: '1.6',
+      opacity: 0.9
+    },
     grid: {
       display: 'grid',
       gridTemplateColumns: '1.2fr 2fr',
@@ -238,20 +273,12 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
     },
     card: {
       background: 'rgba(0,0,0,0.4)',
-      border: '1px solid rgba(124,58,237,0.3)',
-      borderRadius: '1rem',
-      padding: '1rem',
-      backdropFilter: 'blur(8px)'
+      border: '2px solid rgba(0, 255, 255, 0.2)',
+      borderRadius: '1.5rem',
+      padding: '2rem',
+      backdropFilter: 'blur(20px)',
+      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
     },
-    title: {
-      fontSize: '1.5rem',
-      fontWeight: 'bold',
-      marginBottom: '0.5rem',
-      background: 'linear-gradient(45deg,#f59e0b,#a855f7,#ec4899)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent'
-    },
-    label: {
       fontSize: '0.875rem',
       color: '#d1d5db',
       marginTop: '0.75rem',
@@ -296,7 +323,13 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
   }
 
   return (
-    <div style={styles.grid}>
+    <div style={styles.container}>
+      <h2 style={styles.title}>🧠 Community Market</h2>
+      <p style={styles.subtitle}>
+        Create custom prediction markets and bet on real-world events with the community
+      </p>
+      
+      <div style={styles.grid}>
       {/* Create Bet */}
       <div style={styles.card}>
         <div style={styles.title}>🧠 Create Custom Prediction</div>
@@ -457,6 +490,7 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
             Synced {onchainMarkets.length} on-chain markets {owner ? `(owner: ${owner.slice(0,6)}...${owner.slice(-4)})` : ''}
           </div>
         )}
+      </div>
       </div>
     </div>
   )

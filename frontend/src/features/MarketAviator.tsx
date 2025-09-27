@@ -153,13 +153,14 @@ export default function MarketAviator({ account, chainId }: MarketAviatorProps) 
       background: 'rgba(0, 0, 0, 0.6)',
       backdropFilter: 'blur(20px)',
       borderRadius: '2rem',
-      padding: '2.5rem',
+      padding: '3rem',
       border: '2px solid rgba(0, 255, 255, 0.2)',
-      maxWidth: '900px',
+      maxWidth: '100%',
       margin: '0 auto',
       position: 'relative' as const,
       overflow: 'hidden' as const,
-      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 255, 255, 0.1)'
+      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 255, 255, 0.1)',
+      minHeight: 'calc(100vh - 200px)'
     },
     title: {
       fontSize: '3rem',
