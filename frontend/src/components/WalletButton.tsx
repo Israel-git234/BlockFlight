@@ -1,24 +1,25 @@
-import React, { useState } from 'react'
-import { Button } from './ui/button'
-import { Wallet, CheckCircle, Zap, Shield } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState } from 'react';
+import { Button } from './ui/button';
+import { Wallet, CheckCircle, Zap, Shield } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function WalletButton() {
-  const [isConnected, setIsConnected] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const handleConnect = async () => {
-    setIsConnecting(true)
+    setIsConnecting(true);
+
     // Simulate MetaMask connection
     setTimeout(() => {
-      setIsConnected(true)
-      setIsConnecting(false)
-    }, 2000)
-  }
+      setIsConnected(true);
+      setIsConnecting(false);
+    }, 2000);
+  };
 
   const handleDisconnect = () => {
-    setIsConnected(false)
-  }
+    setIsConnected(false);
+  };
 
   if (isConnected) {
     return (
@@ -37,6 +38,7 @@ export function WalletButton() {
             animate={{ x: ['-100%', '100%'] }}
             transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
           />
+
           <div className="flex items-center space-x-2 relative z-10">
             <motion.div
               animate={{ rotate: 360 }}
@@ -53,14 +55,21 @@ export function WalletButton() {
             />
           </div>
         </Button>
+
         {/* Holographic glow */}
         <motion.div
           className="absolute inset-0 bg-green-500/20 rounded-md blur-xl"
-          animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.05, 1] }}
-          transition={{ duration: 3, repeat: Infinity }}
+          animate={{
+            opacity: [0.2, 0.5, 0.2],
+            scale: [1, 1.05, 1]
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity
+          }}
         />
       </motion.div>
-    )
+    );
   }
 
   return (
@@ -77,8 +86,14 @@ export function WalletButton() {
         {/* Animated circuit pattern */}
         <motion.div
           className="absolute inset-0"
-          animate={{ backgroundPosition: ['0px 0px', '20px 20px'] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          animate={{
+            backgroundPosition: ['0px 0px', '20px 20px']
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "linear"
+          }}
           style={{
             backgroundImage: `
               linear-gradient(45deg, rgba(0, 255, 255, 0.1) 25%, transparent 25%),
@@ -87,6 +102,7 @@ export function WalletButton() {
             backgroundSize: '20px 20px'
           }}
         />
+
         <AnimatePresence mode="wait">
           {isConnecting ? (
             <motion.div
@@ -121,8 +137,15 @@ export function WalletButton() {
               className="flex items-center space-x-2 relative z-10"
             >
               <motion.div
-                animate={{ rotate: [0, 10, 0, -10, 0], scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                animate={{
+                  rotate: [0, 10, 0, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatDelay: 3
+                }}
               >
                 <Wallet className="w-4 h-4 text-cyan-400" />
               </motion.div>
@@ -133,15 +156,21 @@ export function WalletButton() {
           )}
         </AnimatePresence>
       </Button>
+
       {/* Cyberpunk glow effect */}
       <motion.div
         className="absolute inset-0 bg-cyan-500/20 rounded-md blur-xl"
-        animate={{ 
-          opacity: isConnecting ? [0.2, 0.8, 0.2] : [0.2, 0.4, 0.2], 
-          scale: [1, 1.05, 1] 
+        animate={{
+          opacity: isConnecting ? [0.2, 0.8, 0.2] : [0.2, 0.4, 0.2],
+          scale: [1, 1.05, 1]
         }}
-        transition={{ duration: isConnecting ? 1 : 3, repeat: Infinity }}
+        transition={{
+          duration: isConnecting ? 1 : 3,
+          repeat: Infinity
+        }}
       />
     </motion.div>
-  )
+  );
 }
+
+export default WalletButton;

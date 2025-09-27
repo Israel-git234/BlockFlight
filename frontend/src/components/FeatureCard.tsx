@@ -25,6 +25,14 @@ interface FeatureCardProps {
 export function FeatureCard({ feature, isActive, onClick }: FeatureCardProps) {
   const { icon: Icon, title, description, gradient, glowColor, status, players, volume } = feature;
 
+  // Tailwind-safe static mappings for dynamic border/text classes
+  const glowBorderClass: Record<string, string> = {
+    'cyan-400': 'border-cyan-400',
+    'purple-400': 'border-purple-400',
+    'green-400': 'border-green-400',
+    'yellow-400': 'border-yellow-400'
+  };
+
   return (
     <motion.div
       whileHover={{ 
@@ -38,7 +46,7 @@ export function FeatureCard({ feature, isActive, onClick }: FeatureCardProps) {
       <Card className={`
         relative overflow-hidden border transition-all duration-300 backdrop-blur-sm h-48
         ${isActive 
-          ? `border-${glowColor} bg-gray-900/80 shadow-lg` 
+          ? `${glowBorderClass[glowColor] || 'border-cyan-400'} bg-gray-900/80 shadow-lg` 
           : 'border-gray-700/50 bg-gray-900/40 hover:border-gray-600/70'
         }
       `}>
@@ -122,7 +130,7 @@ export function FeatureCard({ feature, isActive, onClick }: FeatureCardProps) {
 
         {/* Border Glow Animation */}
         <motion.div
-          className={`absolute inset-0 border border-${glowColor}/50 rounded-lg opacity-0`}
+          className={`absolute inset-0 border ${glowBorderClass[glowColor] || 'border-cyan-400'}/50 rounded-lg opacity-0`}
           animate={isActive ? { 
             opacity: [0, 0.8, 0]
           } : {}}

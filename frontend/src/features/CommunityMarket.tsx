@@ -279,6 +279,7 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
       backdropFilter: 'blur(20px)',
       boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
     },
+    subtitle: {
       fontSize: '0.875rem',
       color: '#d1d5db',
       marginTop: '0.75rem',

@@ -1,252 +1,278 @@
-import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from './ui/button'
-import { Play, Square } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Play, Pause, RotateCcw, TrendingUp, Users, DollarSign } from 'lucide-react';
 
-interface MarketData {
-  ethPrice: number
-  priceChange24h: number
-  volatility: number
+interface GameState {
+  isRunning: boolean;
+  multiplier: number;
+  canCashOut: boolean;
+  hasCrashed: boolean;
+  betAmount: number;
+  potentialWin: number;
 }
 
 export function BlockFlightGame() {
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [multiplier, setMultiplier] = useState(1.00)
-  const [betAmount, setBetAmount] = useState(0.01)
-  const [gameHistory, setGameHistory] = useState<number[]>([])
-  const [marketData, setMarketData] = useState<MarketData>({
-    ethPrice: 0,
-    priceChange24h: 0,
-    volatility: 0
-  })
-  const [startPrice, setStartPrice] = useState<number>(0)
+  const [gameState, setGameState] = useState<GameState>({
+    isRunning: false,
+    multiplier: 1.00,
+    canCashOut: false,
+    hasCrashed: false,
+    betAmount: 0,
+    potentialWin: 0
+  });
 
-  // Fetch ETH price data from CoinGecko
-  const fetchETHPrice = async () => {
-    try {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true')
-      const data = await response.json()
-      
-      if (data.ethereum) {
-        const ethPrice = data.ethereum.usd
-        const priceChange24h = data.ethereum.usd_24h_change || 0
-        const volatility = Math.abs(priceChange24h) / 100
-        
-        setMarketData({
-          ethPrice,
-          priceChange24h,
-          volatility
-        })
-      }
-    } catch (error) {
-      console.error('Failed to fetch ETH price:', error)
-      // Fallback to mock data
-      setMarketData({
-        ethPrice: 3500 + Math.random() * 200,
-        priceChange24h: (Math.random() - 0.5) * 10,
-        volatility: Math.random() * 0.1
-      })
+  const [recentGames, setRecentGames] = useState([
+    { multiplier: 2.45, crashed: true },
+    { multiplier: 1.23, crashed: true },
+    { multiplier: 5.67, crashed: true },
+    { multiplier: 1.89, crashed: true },
+    { multiplier: 3.21, crashed: true }
+  ]);
+
+  const [liveStats, setLiveStats] = useState({
+    totalPlayers: 1247,
+    totalVolume: 45.2,
+    biggestWin: 12.34
+  });
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (gameState.isRunning && !gameState.hasCrashed) {
+      interval = setInterval(() => {
+        setGameState(prev => {
+          const newMultiplier = prev.multiplier + 0.01;
+          const crashPoint = Math.random() * 10 + 1; // Random crash between 1x-11x
+          
+          if (newMultiplier >= crashPoint) {
+            return {
+              ...prev,
+              hasCrashed: true,
+              isRunning: false,
+              canCashOut: false
+            };
+          }
+          
+          return {
+            ...prev,
+            multiplier: newMultiplier,
+            canCashOut: newMultiplier > 1.1,
+            potentialWin: prev.betAmount * newMultiplier
+          };
+        });
+      }, 100);
     }
-  }
 
-  // Fetch market data every 5 seconds
-  useEffect(() => {
-    fetchETHPrice()
-    const interval = setInterval(fetchETHPrice, 5000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Game logic with market influence
-  useEffect(() => {
-    if (!isPlaying) return
-
-    const gameInterval = setInterval(() => {
-      setMultiplier(prev => {
-        const newMultiplier = prev + 0.01
-        
-        // Market-driven crash probability
-        const baseCrashChance = 0.02
-        const volatilityFactor = marketData.volatility * 0.5
-        const priceChangeFactor = Math.abs(marketData.priceChange24h) / 1000
-        const crashChance = baseCrashChance + volatilityFactor + priceChangeFactor
-        
-        // Higher multiplier = higher crash chance
-        const dynamicCrashChance = crashChance * (1 + (newMultiplier - 1) * 0.1)
-        
-        if (Math.random() < dynamicCrashChance) {
-          setIsPlaying(false)
-          setGameHistory(prev => [newMultiplier, ...prev.slice(0, 9)])
-          return 1.00
-        }
-        
-        return newMultiplier
-      })
-    }, 100)
-
-    return () => clearInterval(gameInterval)
-  }, [isPlaying, marketData])
+    return () => clearInterval(interval);
+  }, [gameState.isRunning, gameState.hasCrashed]);
 
   const startGame = () => {
-    setStartPrice(marketData.ethPrice)
-    setIsPlaying(true)
-    setMultiplier(1.00)
-  }
+    if (gameState.betAmount <= 0) return;
+    
+    setGameState(prev => ({
+      ...prev,
+      isRunning: true,
+      hasCrashed: false,
+      multiplier: 1.00,
+      canCashOut: false,
+      potentialWin: prev.betAmount
+    }));
+  };
 
   const cashOut = () => {
-    if (isPlaying) {
-      setIsPlaying(false)
-      setGameHistory(prev => [multiplier, ...prev.slice(0, 9)])
-      setMultiplier(1.00)
-    }
-  }
+    if (!gameState.canCashOut) return;
+    
+    setGameState(prev => ({
+      ...prev,
+      isRunning: false,
+      hasCrashed: true
+    }));
+  };
+
+  const resetGame = () => {
+    setGameState({
+      isRunning: false,
+      multiplier: 1.00,
+      canCashOut: false,
+      hasCrashed: false,
+      betAmount: 0,
+      potentialWin: 0
+    });
+  };
+
+  const setBetAmount = (amount: number) => {
+    setGameState(prev => ({
+      ...prev,
+      betAmount: amount,
+      potentialWin: amount
+    }));
+  };
 
   return (
-    <div className="container mx-auto px-6 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="max-w-4xl mx-auto"
-      >
+    <div className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        <div className="text-center mb-8">
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-center mb-8"
-        >
-          <motion.h1
-            className="text-4xl md:text-5xl font-bold mb-4"
-            animate={{ 
-              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] 
-            }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            style={{
-              background: 'linear-gradient(270deg, #00ffff, #8b5cf6, #00ff88, #00ffff)',
-              backgroundSize: '400% 400%',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
+            className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-4"
           >
-            BlockFlight
+            BlockFlight Game
           </motion.h1>
-          <motion.p
-            className="text-gray-300 text-lg"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            Market-driven crash game powered by real-time ETH volatility
-          </motion.p>
-        </motion.div>
+          <p className="text-gray-400 text-lg">
+            The ultimate crash game experience
+          </p>
+        </div>
 
-        {/* Market Data Display */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Game Area */}
+          <div className="lg:col-span-2">
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+              <CardContent className="p-8">
+                {/* Game Display */}
+                <div className="text-center mb-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-        >
-          {[
-            { label: 'ETH Price', value: `$${marketData.ethPrice.toFixed(2)}`, color: 'text-blue-400' },
-            { 
-              label: '24h Change', 
-              value: `${marketData.priceChange24h >= 0 ? '+' : ''}${marketData.priceChange24h.toFixed(2)}%`, 
-              color: marketData.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400' 
-            },
-            { label: 'Volatility', value: `${(marketData.volatility * 100).toFixed(1)}%`, color: 'text-purple-400' },
-            { label: 'Game Start Price', value: `$${startPrice.toFixed(2)}`, color: 'text-cyan-400' }
-          ].map((item, index) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
-              className="p-4 rounded-lg bg-gray-800/50 border border-gray-700/50 backdrop-blur-sm text-center"
-            >
-              <div className="text-sm text-gray-400 mb-1">{item.label}</div>
-              <div className={`text-lg font-bold ${item.color}`}>{item.value}</div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Game Area */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="text-center mb-8"
-        >
-          <motion.div
-            className="text-6xl md:text-8xl font-bold mb-6"
+                    className="text-6xl font-bold mb-4"
             animate={{ 
-              color: isPlaying ? '#00ff88' : '#8b5cf6',
-              textShadow: isPlaying 
-                ? ['0 0 20px #00ff88', '0 0 40px #00ff88', '0 0 20px #00ff88']
-                : ['0 0 20px #8b5cf6', '0 0 40px #8b5cf6', '0 0 20px #8b5cf6']
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            {multiplier.toFixed(2)}x
+                      scale: gameState.isRunning ? [1, 1.05, 1] : 1,
+                      color: gameState.hasCrashed ? '#ef4444' : '#10b981'
+                    }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {gameState.multiplier.toFixed(2)}x
           </motion.div>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
-            <input
-              type="number"
-              value={betAmount}
-              onChange={(e) => setBetAmount(parseFloat(e.target.value) || 0.01)}
-              min="0.01"
-              step="0.01"
-              className="px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700/50 text-white text-center w-32"
-              placeholder="Bet Amount (ETH)"
-            />
-            
-            {!isPlaying ? (
+                  <div className="flex justify-center space-x-4 mb-6">
               <Button
                 onClick={startGame}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white px-8 py-3 text-lg font-bold"
+                      disabled={gameState.isRunning || gameState.betAmount <= 0}
+                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-3"
               >
                 <Play className="w-5 h-5 mr-2" />
-                Start Flight
+                      Start Game
               </Button>
-            ) : (
+                    
               <Button
                 onClick={cashOut}
-                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white px-8 py-3 text-lg font-bold"
+                      disabled={!gameState.canCashOut}
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-3"
               >
-                <Square className="w-5 h-5 mr-2" />
+                      <Pause className="w-5 h-5 mr-2" />
                 Cash Out
               </Button>
-            )}
-          </div>
-        </motion.div>
+                    
+                    <Button
+                      onClick={resetGame}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                    >
+                      <RotateCcw className="w-5 h-5 mr-2" />
+                      Reset
+                    </Button>
+                  </div>
+                </div>
 
-        {/* Game History */}
-        {gameHistory.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-center"
-          >
-            <h3 className="text-xl font-bold text-gray-300 mb-4">Recent Crashes</h3>
-            <div className="grid grid-cols-5 gap-2 max-w-md mx-auto">
-              {gameHistory.map((crash, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  className="p-2 rounded bg-gray-800/50 border border-gray-700/50 text-white font-bold"
-                >
-                  {crash.toFixed(2)}x
-                </motion.div>
+                {/* Betting Controls */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Bet Amount (ETH)
+                    </label>
+                    <input
+                      type="number"
+                      value={gameState.betAmount}
+                      onChange={(e) => setBetAmount(parseFloat(e.target.value) || 0)}
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                      placeholder="0.00"
+                      disabled={gameState.isRunning}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Potential Win (ETH)
+                    </label>
+                    <div className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white">
+                      {gameState.potentialWin.toFixed(4)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Bet Buttons */}
+                <div className="flex space-x-2 mb-6">
+                  {[0.01, 0.05, 0.1, 0.25, 0.5, 1.0].map(amount => (
+                    <Button
+                      key={amount}
+                      onClick={() => setBetAmount(amount)}
+                      disabled={gameState.isRunning}
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                    >
+                      {amount} ETH
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Live Stats */}
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-green-400" />
+                  Live Stats
+                </h3>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Players Online</span>
+                    <span className="text-white font-semibold">{liveStats.totalPlayers}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Volume (24h)</span>
+                    <span className="text-white font-semibold">{liveStats.totalVolume} ETH</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Biggest Win</span>
+                    <span className="text-green-400 font-semibold">{liveStats.biggestWin}x</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Games */}
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Recent Games</h3>
+                
+                <div className="space-y-2">
+                  {recentGames.map((game, index) => (
+                    <div key={index} className="flex justify-between items-center py-2">
+                      <span className="text-gray-400">Game #{recentGames.length - index}</span>
+                      <Badge 
+                        className={game.crashed ? 'bg-red-500' : 'bg-green-500'}
+                      >
+                        {game.multiplier.toFixed(2)}x
+                      </Badge>
+                    </div>
               ))}
             </div>
-          </motion.div>
-        )}
-      </motion.div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
+
+export default BlockFlightGame;
