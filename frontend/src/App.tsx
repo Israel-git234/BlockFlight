@@ -6,6 +6,8 @@ import CruiseMode from './features/CruiseMode'
 import TradingPools from './features/TradingPools'
 import NFTRewards from './features/NFTRewards'
 import CommunityMarket from './features/CommunityMarket'
+import Leaderboard from './features/Leaderboard'
+import LiveStats from './features/LiveStats'
 
 // Components
 import WalletConnect from './components/WalletConnect'
@@ -87,13 +89,26 @@ function App() {
       icon: '🏆',
       status: 'Coming Soon',
       color: 'from-purple-500 to-pink-500'
+    },
+    {
+      id: 'leaderboard',
+      name: 'Leaderboard',
+      description: 'Compete with top players and unlock achievements',
+      icon: '🏆',
+      status: 'Live',
+      color: 'from-yellow-500 to-orange-500'
     }
   ]
 
   const renderFeature = () => {
     switch (selectedFeature) {
       case 'market-aviator':
-        return <MarketAviator account={account} chainId={chainId} />
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <MarketAviator account={account} chainId={chainId} />
+            <LiveStats />
+          </div>
+        )
       case 'cruise-mode':
         return <CruiseMode account={account} chainId={chainId} />
       case 'community-market':
@@ -102,26 +117,36 @@ function App() {
         return <TradingPools account={account} chainId={chainId} />
       case 'nft-rewards':
         return <NFTRewards account={account} chainId={chainId} />
+      case 'leaderboard':
+        return <Leaderboard />
       default:
-        return <MarketAviator account={account} chainId={chainId} />
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <MarketAviator account={account} chainId={chainId} />
+            <LiveStats />
+          </div>
+        )
     }
   }
 
   const styles = {
     container: {
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a, #1e293b, #7c3aed, #1e293b, #0f172a)',
+      background: 'linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e, #0f3460, #533483)',
       color: 'white',
-      fontFamily: 'system-ui, sans-serif'
+      fontFamily: "'Inter', system-ui, sans-serif",
+      position: 'relative' as const,
+      overflow: 'hidden' as const
     },
     header: {
-      background: 'rgba(0,0,0,0.8)',
-      backdropFilter: 'blur(10px)',
-      borderBottom: '1px solid rgba(124, 58, 237, 0.3)',
+      background: 'rgba(0,0,0,0.9)',
+      backdropFilter: 'blur(20px)',
+      borderBottom: '1px solid rgba(0, 255, 255, 0.2)',
       padding: '1rem 0',
       position: 'sticky' as const,
       top: 0,
-      zIndex: 100
+      zIndex: 100,
+      boxShadow: '0 4px 20px rgba(0, 255, 255, 0.1)'
     },
     headerContent: {
       maxWidth: '1200px',
@@ -138,14 +163,18 @@ function App() {
     },
     logoIcon: {
       fontSize: '2.5rem',
-      animation: 'float 3s ease-in-out infinite'
+      animation: 'float 3s ease-in-out infinite',
+      filter: 'drop-shadow(0 0 10px rgba(0, 255, 255, 0.5))'
     },
     logoText: {
       fontSize: '2.5rem',
       fontWeight: 'bold',
-      background: 'linear-gradient(45deg, #7c3aed, #ec4899, #3b82f6)',
+      background: 'linear-gradient(45deg, #00ffff, #8b5cf6, #00ff88, #00ffff)',
+      backgroundSize: '400% 400%',
       WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent'
+      WebkitTextFillColor: 'transparent',
+      animation: 'gradientShift 3s ease-in-out infinite',
+      textShadow: '0 0 20px rgba(0, 255, 255, 0.3)'
     },
     subtitle: {
       fontSize: '0.875rem',
@@ -179,6 +208,56 @@ function App() {
   return (
     <NotificationsProvider>
     <div style={styles.container}>
+      {/* Animated Background Elements */}
+      <div style={{
+        position: 'absolute',
+        top: '10%',
+        left: '10%',
+        width: '200px',
+        height: '200px',
+        background: 'radial-gradient(circle, rgba(0, 255, 255, 0.1) 0%, transparent 70%)',
+        borderRadius: '50%',
+        animation: 'float 6s ease-in-out infinite',
+        zIndex: 1
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '60%',
+        right: '15%',
+        width: '150px',
+        height: '150px',
+        background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%)',
+        borderRadius: '50%',
+        animation: 'float 8s ease-in-out infinite reverse',
+        zIndex: 1
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '20%',
+        left: '20%',
+        width: '100px',
+        height: '100px',
+        background: 'radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%)',
+        borderRadius: '50%',
+        animation: 'float 10s ease-in-out infinite',
+        zIndex: 1
+      }} />
+
+      {/* Grid Pattern Overlay */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: `
+          linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: '50px 50px',
+        zIndex: 1
+      }} />
+
       {/* Header */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
@@ -218,18 +297,28 @@ function App() {
       {/* Global Styles */}
       <style>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(5deg); }
+        }
+        
+        @keyframes gradientShift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
         }
         
         @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
         }
         
         @keyframes glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
-          50% { box-shadow: 0 0 30px rgba(124, 58, 237, 0.6); }
+          0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6); }
+        }
+
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
         }
 
         * {
@@ -239,16 +328,32 @@ function App() {
         body {
           margin: 0;
           overflow-x: hidden;
+          font-family: 'Inter', system-ui, sans-serif;
         }
 
         button:hover {
           transform: translateY(-2px);
-          transition: all 0.2s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .feature-card:hover {
-          transform: translateY(-5px);
-          transition: all 0.3s ease;
+          transform: translateY(-8px) scale(1.02);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+          background: linear-gradient(45deg, #00ffff, #8b5cf6);
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(45deg, #22d3ee, #a855f7);
         }
       `}</style>
     </div>

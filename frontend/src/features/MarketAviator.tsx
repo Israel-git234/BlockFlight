@@ -150,22 +150,29 @@ export default function MarketAviator({ account, chainId }: MarketAviatorProps) 
 
   const styles = {
     container: {
-      background: 'rgba(0, 0, 0, 0.4)',
-      backdropFilter: 'blur(10px)',
-      borderRadius: '1.5rem',
-      padding: '2rem',
-      border: '1px solid rgba(239, 68, 68, 0.3)',
-      maxWidth: '800px',
-      margin: '0 auto'
+      background: 'rgba(0, 0, 0, 0.6)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '2rem',
+      padding: '2.5rem',
+      border: '2px solid rgba(0, 255, 255, 0.2)',
+      maxWidth: '900px',
+      margin: '0 auto',
+      position: 'relative' as const,
+      overflow: 'hidden' as const,
+      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 255, 255, 0.1)'
     },
     title: {
-      fontSize: '2.5rem',
+      fontSize: '3rem',
       fontWeight: 'bold',
       marginBottom: '1rem',
-      background: 'linear-gradient(45deg, #ef4444, #f97316)',
+      background: 'linear-gradient(45deg, #00ffff, #8b5cf6, #00ff88, #00ffff)',
+      backgroundSize: '400% 400%',
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
-      textAlign: 'center' as const
+      textAlign: 'center' as const,
+      animation: 'gradientShift 3s ease-in-out infinite',
+      textShadow: '0 0 30px rgba(0, 255, 255, 0.5)',
+      filter: 'drop-shadow(0 0 10px rgba(0, 255, 255, 0.3))'
     },
     subtitle: {
       fontSize: '1.125rem',
@@ -174,25 +181,34 @@ export default function MarketAviator({ account, chainId }: MarketAviatorProps) 
       marginBottom: '2rem'
     },
     gameArea: {
-      background: 'rgba(0, 0, 0, 0.6)',
-      borderRadius: '1rem',
-      padding: '2rem',
+      background: 'rgba(0, 0, 0, 0.7)',
+      borderRadius: '1.5rem',
+      padding: '2.5rem',
       marginBottom: '2rem',
-      border: '1px solid rgba(239, 68, 68, 0.2)'
+      border: '2px solid rgba(0, 255, 255, 0.3)',
+      position: 'relative' as const,
+      overflow: 'hidden' as const,
+      boxShadow: 'inset 0 0 20px rgba(0, 255, 255, 0.1)'
     },
     multiplier: {
-      fontSize: '4rem',
+      fontSize: '5rem',
       fontWeight: 'bold',
       textAlign: 'center' as const,
       marginBottom: '1rem',
-      color: isFlying ? '#22c55e' : '#ef4444',
-      textShadow: isFlying ? '0 0 20px rgba(34, 197, 94, 0.5)' : 'none'
+      color: isFlying ? '#00ff88' : '#ff6b6b',
+      textShadow: isFlying ? '0 0 30px rgba(0, 255, 136, 0.8)' : '0 0 30px rgba(255, 107, 107, 0.8)',
+      filter: isFlying ? 'drop-shadow(0 0 15px rgba(0, 255, 136, 0.5))' : 'drop-shadow(0 0 15px rgba(255, 107, 107, 0.5))',
+      animation: isFlying ? 'pulse 2s ease-in-out infinite' : 'none',
+      fontFamily: "'JetBrains Mono', monospace"
     },
     plane: {
-      fontSize: '3rem',
+      fontSize: '4rem',
       textAlign: 'center' as const,
-      marginBottom: '1rem',
-      animation: isFlying ? 'fly 2s ease-in-out infinite' : 'none'
+      marginBottom: '1.5rem',
+      animation: isFlying ? 'fly 2s ease-in-out infinite' : 'none',
+      filter: isFlying ? 'drop-shadow(0 0 20px rgba(0, 255, 255, 0.6))' : 'none',
+      transform: isFlying ? 'scale(1.1)' : 'scale(1)',
+      transition: 'all 0.3s ease'
     },
     status: {
       textAlign: 'center' as const,
@@ -217,26 +233,32 @@ export default function MarketAviator({ account, chainId }: MarketAviatorProps) 
       minWidth: '120px'
     },
     button: {
-      background: 'linear-gradient(45deg, #ef4444, #dc2626)',
+      background: 'linear-gradient(45deg, #00ffff, #8b5cf6)',
       border: 'none',
-      borderRadius: '0.5rem',
-      padding: '0.75rem 1.5rem',
+      borderRadius: '0.75rem',
+      padding: '1rem 2rem',
       color: 'white',
       fontWeight: 'bold',
       cursor: 'pointer',
       fontSize: '1rem',
-      transition: 'all 0.2s ease'
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxShadow: '0 4px 15px rgba(0, 255, 255, 0.3)',
+      position: 'relative' as const,
+      overflow: 'hidden' as const
     },
     cashOutButton: {
-      background: 'linear-gradient(45deg, #22c55e, #16a34a)',
+      background: 'linear-gradient(45deg, #00ff88, #00d4aa)',
       border: 'none',
-      borderRadius: '0.5rem',
-      padding: '0.75rem 1.5rem',
+      borderRadius: '0.75rem',
+      padding: '1rem 2rem',
       color: 'white',
       fontWeight: 'bold',
       cursor: 'pointer',
       fontSize: '1rem',
-      transition: 'all 0.2s ease'
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxShadow: '0 4px 15px rgba(0, 255, 136, 0.3)',
+      position: 'relative' as const,
+      overflow: 'hidden' as const
     },
     disabledButton: {
       background: 'rgba(107, 114, 128, 0.5)',
@@ -276,6 +298,45 @@ export default function MarketAviator({ account, chainId }: MarketAviatorProps) 
       </p>
 
       <div style={styles.gameArea}>
+        {/* Animated Background Elements */}
+        {isFlying && (
+          <>
+            <div style={{
+              position: 'absolute',
+              top: '20%',
+              left: '10%',
+              width: '4px',
+              height: '4px',
+              background: '#00ffff',
+              borderRadius: '50%',
+              animation: 'sparkle 2s ease-in-out infinite',
+              boxShadow: '0 0 10px #00ffff'
+            }} />
+            <div style={{
+              position: 'absolute',
+              top: '60%',
+              right: '15%',
+              width: '3px',
+              height: '3px',
+              background: '#8b5cf6',
+              borderRadius: '50%',
+              animation: 'sparkle 2.5s ease-in-out infinite',
+              boxShadow: '0 0 8px #8b5cf6'
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: '30%',
+              left: '20%',
+              width: '2px',
+              height: '2px',
+              background: '#00ff88',
+              borderRadius: '50%',
+              animation: 'sparkle 3s ease-in-out infinite',
+              boxShadow: '0 0 6px #00ff88'
+            }} />
+          </>
+        )}
+
         <div style={styles.plane}>✈️</div>
         <div style={styles.multiplier}>{multiplier.toFixed(2)}x</div>
         <div style={styles.status}>
@@ -350,8 +411,33 @@ export default function MarketAviator({ account, chainId }: MarketAviatorProps) 
 
       <style>{`
         @keyframes fly {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(5deg); }
+        }
+        
+        @keyframes sparkle {
+          0%, 100% { opacity: 0; transform: scale(0.5); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        @keyframes gradientShift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        button:hover {
+          transform: translateY(-3px) scale(1.05);
+          box-shadow: 0 8px 25px rgba(0, 255, 255, 0.4);
+        }
+        
+        .cashOutButton:hover {
+          transform: translateY(-3px) scale(1.05);
+          box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
         }
       `}</style>
     </div>
