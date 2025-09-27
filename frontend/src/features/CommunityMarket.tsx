@@ -27,6 +27,8 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
   const { addNotification } = useNotifications()
   const COMMUNITY_ADDR = (import.meta as any).env?.VITE_COMMUNITY_MARKET_CONTRACT as string | undefined
   const [useOnChain, setUseOnChain] = useState<boolean>(!!COMMUNITY_ADDR)
+  const [owner, setOwner] = useState<string>('')
+  const [onchainMarkets, setOnchainMarkets] = useState<any[]>([])
   const [bets, setBets] = useState<CommunityBet[]>([
     {
       id: 'b1',
@@ -102,6 +104,28 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
     } catch {}
   }, [])
 
+  // On-chain sync
+  useEffect(() => {
+    if (!useOnChain || !COMMUNITY_ADDR) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const c = await getContract(COMMUNITY_ADDR, COMMUNITY_MARKET_ABI, false)
+        // owner() exists via Ownable: hardhat artifact ABI not imported here, but Common in OZ
+        // We will try-catch owner call; if absent, skip
+        try { const own = await (c as any).owner(); if (!cancelled) setOwner(own) } catch {}
+        const count = Number(await (c as any).marketCount())
+        const ms: any[] = []
+        for (let i = 1; i <= count; i++) {
+          const m = await (c as any).markets(i)
+          ms.push({ id: i, ...m })
+        }
+        if (!cancelled) setOnchainMarkets(ms)
+      } catch (e) { console.warn('on-chain sync failed', e) }
+    })()
+    return () => { cancelled = true }
+  }, [useOnChain, COMMUNITY_ADDR])
+
   // Persist to localStorage
   useEffect(() => {
     try { localStorage.setItem('bf_community_bets', JSON.stringify(bets)) } catch {}
@@ -130,7 +154,14 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
           title.trim(), description.trim(), category, (isPrivate && groupId.trim()) ? groupId.trim() : '',
           endsAt, yesX100, noX100
         )
-        await tx.wait()
+        const receipt = await tx.wait()
+        // After creating, re-sync markets
+        try {
+          const c = await getContract(COMMUNITY_ADDR, COMMUNITY_MARKET_ABI, false)
+          const count = Number(await (c as any).marketCount())
+          const m = await (c as any).markets(count)
+          setOnchainMarkets(prev => [...prev, { id: count, ...m }])
+        } catch {}
       } catch (e) {
         console.error('On-chain create failed, falling back to local', e)
       }
@@ -181,8 +212,10 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
       // best-effort on-chain bet; UI updates locally regardless
       getContract(COMMUNITY_ADDR, COMMUNITY_MARKET_ABI, true)
         .then(async (c) => {
-          const idNum = 1 // NOTE: For a full integration, store and sync on-chain IDs
-          const tx = await c.bet(idNum, side === 'YES', { value: (amount * 1e18).toFixed(0) })
+          // For demo, bet on last market if exists
+          const idNum = onchainMarkets.length > 0 ? onchainMarkets[onchainMarkets.length - 1].id : 1
+          const value = BigInt(Math.floor(amount * 1e18))
+          const tx = await c.bet(idNum, side === 'YES', { value })
           await tx.wait()
         })
         .catch(err => console.warn('On-chain bet failed (demo continues locally):', err))
@@ -368,6 +401,62 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
             </div>
           ))}
         </div>
+        {/* Admin resolve / user claim controls */}
+        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' as const }}>
+          <button
+            style={{background: 'linear-gradient(45deg,#a855f7,#ec4899)', border: 'none', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', color: 'white', fontWeight: 'bold', cursor: 'pointer'}}
+            onClick={async () => {
+              if (useOnChain && COMMUNITY_ADDR) {
+                try {
+                  const c = await getContract(COMMUNITY_ADDR, COMMUNITY_MARKET_ABI, true)
+                  const idNum = onchainMarkets.length > 0 ? onchainMarkets[onchainMarkets.length - 1].id : 1
+                  const tx = await (c as any).resolve(idNum, true)
+                  await tx.wait()
+                  addNotification({ title: 'Market Resolved', message: `Market #${idNum} resolved to YES`, tag: 'community' })
+                } catch (e) { alert('Resolve failed: ' + (e as any)?.message) }
+              } else {
+                alert('Local demo: resolution not persisted on-chain')
+              }
+            }}
+          >Resolve YES (admin)</button>
+          <button
+            style={{background: 'linear-gradient(45deg,#ef4444,#b91c1c)', border: 'none', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', color: 'white', fontWeight: 'bold', cursor: 'pointer'}}
+            onClick={async () => {
+              if (useOnChain && COMMUNITY_ADDR) {
+                try {
+                  const c = await getContract(COMMUNITY_ADDR, COMMUNITY_MARKET_ABI, true)
+                  const idNum = onchainMarkets.length > 0 ? onchainMarkets[onchainMarkets.length - 1].id : 1
+                  const tx = await (c as any).resolve(idNum, false)
+                  await tx.wait()
+                  addNotification({ title: 'Market Resolved', message: `Market #${idNum} resolved to NO`, tag: 'community' })
+                } catch (e) { alert('Resolve failed: ' + (e as any)?.message) }
+              } else {
+                alert('Local demo: resolution not persisted on-chain')
+              }
+            }}
+          >Resolve NO (admin)</button>
+          <button
+            style={{background: 'linear-gradient(45deg,#10b981,#059669)', border: 'none', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', color: 'white', fontWeight: 'bold', cursor: 'pointer'}}
+            onClick={async () => {
+              if (useOnChain && COMMUNITY_ADDR) {
+                try {
+                  const c = await getContract(COMMUNITY_ADDR, COMMUNITY_MARKET_ABI, true)
+                  const idNum = onchainMarkets.length > 0 ? onchainMarkets[onchainMarkets.length - 1].id : 1
+                  const tx = await (c as any).claim(idNum)
+                  await tx.wait()
+                  addNotification({ title: 'Claimed', message: `Claimed payout from market #${idNum}`, tag: 'community' })
+                } catch (e) { alert('Claim failed: ' + (e as any)?.message) }
+              } else {
+                alert('Local demo: no claims processed')
+              }
+            }}
+          >Claim Payout</button>
+        </div>
+        {useOnChain && COMMUNITY_ADDR && (
+          <div style={{ marginTop: '1rem', color: '#9ca3af', fontSize: '0.875rem' }}>
+            Synced {onchainMarkets.length} on-chain markets {owner ? `(owner: ${owner.slice(0,6)}...${owner.slice(-4)})` : ''}
+          </div>
+        )}
       </div>
     </div>
   )
