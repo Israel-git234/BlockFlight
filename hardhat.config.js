@@ -15,7 +15,8 @@ module.exports = {
     networks: {
         hardhat: {},
         blockdag: {
-            url: BLOCKDAG_RPC_URL,
+            url: "https://relay.awakening.bdagscan.com",
+            chainId: 1043,
             accounts: PRIVATE_KEY ? [PRIVATE_KEY] : []
         },
         sepolia: {
