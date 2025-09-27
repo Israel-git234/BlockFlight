@@ -33,11 +33,18 @@ async function main() {
     const cruise = await CruiseMode.deploy(deployer.address, treasury);
     await cruise.waitForDeployment();
     console.log("CruiseMode deployed to:", await cruise.getAddress());
+
+    console.log("Deploying CommunityMarket...");
+    const CommunityMarket = await hre.ethers.getContractFactory("CommunityMarket");
+    const community = await CommunityMarket.deploy(deployer.address, treasury);
+    await community.waitForDeployment();
+    console.log("CommunityMarket deployed to:", await community.getAddress());
     
     console.log("\n🎉 Deployment Complete!");
     console.log("📋 Copy these addresses to your frontend/.env:");
-    console.log(`REACT_APP_AVIATOR_CONTRACT=${await aviator.getAddress()}`);
-    console.log(`REACT_APP_CRUISE_CONTRACT=${await cruise.getAddress()}`);
+    console.log(`VITE_AVIATOR_CONTRACT=${await aviator.getAddress()}`);
+    console.log(`VITE_CRUISE_CONTRACT=${await cruise.getAddress()}`);
+    console.log(`VITE_COMMUNITY_MARKET_CONTRACT=${await community.getAddress()}`);
 }
 
 main().catch((error) => {

@@ -8,6 +8,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 ///         This version uses pseudo-randomness for hackathon MVP; replace with
 ///         Chainlink VRF + price feed driven volatility for production.
 contract AviatorGame is Ownable {
+    // Minimal Chainlink Aggregator interface to avoid external deps in MVP
+    interface AggregatorV3Interface {
+        function latestRoundData()
+            external
+            view
+            returns (
+                uint80 roundId,
+                int256 answer,
+                uint256 startedAt,
+                uint256 updatedAt,
+                uint80 answeredInRound
+            );
+    }
     struct Bet {
         uint256 amountWei;
         bool active;
@@ -17,10 +30,19 @@ contract AviatorGame is Ownable {
     uint256 public currentRoundId;
     uint256 public crashMultiplierX100; // e.g., 150 => 1.50x
     bool public bettingOpen;
+    uint256 public roundStartTs;
+    int256 public roundStartPrice; // from price feed
 
     // Economics
     uint256 public houseEdgeBps = 200; // 2% in basis points
     address public treasury;
+
+    // Market-driven parameters
+    AggregatorV3Interface public priceFeed; // e.g., ETH/USD
+    uint256 public baseX100 = 100; // 1.00x base
+    uint256 public factorPerPct = 20; // 20x per 1% move (as example)
+    uint256 public maxMultiplierX100 = 5_000; // cap 50.00x
+    uint256 public minCashoutX100 = 130; // 1.30x minimum to prevent farming
 
     mapping(address => Bet) public bets;
 
@@ -30,6 +52,8 @@ contract AviatorGame is Ownable {
     event CashOut(address indexed player, uint256 indexed roundId, uint256 targetX100, uint256 payoutWei);
     event HouseEdgeUpdated(uint256 newHouseEdgeBps);
     event TreasuryUpdated(address newTreasury);
+    event PriceFeedUpdated(address feed);
+    event RiskParamsUpdated(uint256 baseX100, uint256 factorPerPct, uint256 maxMultiplierX100, uint256 minCashoutX100);
 
     constructor(address initialOwner, address treasuryAddress) Ownable(initialOwner) {
         require(treasuryAddress != address(0), "treasury=0");
@@ -51,6 +75,27 @@ contract AviatorGame is Ownable {
         emit TreasuryUpdated(newTreasury);
     }
 
+    function setPriceFeed(address aggregator) external onlyOwner {
+        priceFeed = AggregatorV3Interface(aggregator);
+        emit PriceFeedUpdated(aggregator);
+    }
+
+    function setRiskParams(
+        uint256 newBaseX100,
+        uint256 newFactorPerPct,
+        uint256 newMaxMultiplierX100,
+        uint256 newMinCashoutX100
+    ) external onlyOwner {
+        require(newBaseX100 >= 100, "base>=1.00x");
+        require(newMaxMultiplierX100 >= newBaseX100, "max>=base");
+        require(newMinCashoutX100 >= 101, "min>=1.01x");
+        baseX100 = newBaseX100;
+        factorPerPct = newFactorPerPct;
+        maxMultiplierX100 = newMaxMultiplierX100;
+        minCashoutX100 = newMinCashoutX100;
+        emit RiskParamsUpdated(baseX100, factorPerPct, maxMultiplierX100, minCashoutX100);
+    }
+
     /// @notice Funds contract liquidity to pay out winners.
     function fund() external payable {}
 
@@ -61,6 +106,15 @@ contract AviatorGame is Ownable {
         currentRoundId += 1;
         crashMultiplierX100 = 0;
         bettingOpen = true;
+        roundStartTs = block.timestamp;
+
+        // snapshot starting price if feed set
+        if (address(priceFeed) != address(0)) {
+            (, int256 answer,,,) = priceFeed.latestRoundData();
+            roundStartPrice = answer;
+        } else {
+            roundStartPrice = 0; // indicates feed not used
+        }
         emit RoundOpened(currentRoundId);
     }
 
@@ -71,16 +125,29 @@ contract AviatorGame is Ownable {
         require(bettingOpen, "already closed");
         bettingOpen = false;
 
-        // Pseudo-random in [0, 9999]
-        uint256 rnd = uint256(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, currentRoundId))) % 10_000;
-        // Base 1.00x to ~10.00x scaled by volatility. Simple, deterministic formula.
-        uint256 base = 100; // 1.00x
-        uint256 volFactor = 100 + (volatilityBps % 2_000); // cap to 300% factor
-        crashMultiplierX100 = base + ((rnd * volFactor) / 10_000); // roughly 1.00x - 300.00x
-
-        if (crashMultiplierX100 < 101) {
-            crashMultiplierX100 = 101; // never below 1.01x to keep demo fun
+        // If price feed available, compute price change since round start
+        uint256 computedX100 = baseX100;
+        if (address(priceFeed) != address(0) && roundStartPrice != 0) {
+            (, int256 latest,,,) = priceFeed.latestRoundData();
+            int256 start = roundStartPrice;
+            int256 diff = latest - start;
+            if (diff < 0) diff = -diff;
+            // priceChangeBps = |new-start| * 10000 / start
+            uint256 priceChangeBps = uint256(diff) * 10_000 / uint256(start > 0 ? start : int256(1));
+            // crashX100 = baseX100 + priceChangeBps * factorPerPct
+            computedX100 = baseX100 + (priceChangeBps * factorPerPct);
+        } else {
+            // fallback to provided volatility
+            computedX100 = baseX100 + (volatilityBps * factorPerPct) / 100; // volatilityBps ~ 1% = 100
         }
+
+        // Add small jitter (+/- 5%) to avoid deterministic farming
+        uint256 rnd = uint256(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, currentRoundId))) % 11_000; // 0..10999
+        int256 jitterBps = int256(rnd) - 5_000; // ~ -5% .. +5%
+        int256 adjusted = int256(computedX100) + (int256(computedX100) * jitterBps) / 100_000;
+        if (adjusted < int256(minCashoutX100)) adjusted = int256(minCashoutX100);
+        if (adjusted > int256(maxMultiplierX100)) adjusted = int256(maxMultiplierX100);
+        crashMultiplierX100 = uint256(adjusted);
 
         emit RoundClosed(currentRoundId, crashMultiplierX100);
     }
@@ -111,7 +178,7 @@ contract AviatorGame is Ownable {
         require(crashMultiplierX100 > 0, "no crash yet");
         Bet storage b = bets[msg.sender];
         require(b.active, "no bet");
-        require(targetX100 >= 101 && targetX100 <= crashMultiplierX100, "bad target");
+        require(targetX100 >= minCashoutX100 && targetX100 <= crashMultiplierX100, "bad target");
 
         uint256 gross = (b.amountWei * targetX100) / 100; // scaled by x100
         uint256 fee = (gross * houseEdgeBps) / 10_000;
