@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // Feature Components
 import MarketAviator from './features/MarketAviator'
@@ -15,8 +16,10 @@ import FeatureSelector from './components/FeatureSelector'
 import { NotificationsProvider } from './components/NotificationsProvider'
 import NotificationBell from './components/NotificationBell'
 
+type Screen = 'dashboard' | 'market-aviator' | 'community-market' | 'cruise-mode' | 'trading-pools' | 'nft-rewards' | 'leaderboard';
+
 function App() {
-  const [selectedFeature, setSelectedFeature] = useState<string>('dashboard')
+  const [selectedFeature, setSelectedFeature] = useState<Screen>('dashboard')
   const [account, setAccount] = useState<string | null>(null)
   const [chainId, setChainId] = useState<number | null>(null)
 
@@ -100,7 +103,7 @@ function App() {
     }
   ]
 
-  const renderFeature = () => {
+  const renderContent = () => {
     switch (selectedFeature) {
       case 'market-aviator':
         return <MarketAviator account={account} chainId={chainId} />
@@ -124,319 +127,137 @@ function App() {
     }
   }
 
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e, #0f3460, #533483)',
-      color: 'white',
-      fontFamily: "'Inter', system-ui, sans-serif",
-      position: 'relative' as const,
-      overflow: 'hidden' as const
-    },
-    header: {
-      background: 'rgba(0,0,0,0.9)',
-      backdropFilter: 'blur(20px)',
-      borderBottom: '1px solid rgba(0, 255, 255, 0.2)',
-      padding: '1rem 0',
-      position: 'sticky' as const,
-      top: 0,
-      zIndex: 100,
-      boxShadow: '0 4px 20px rgba(0, 255, 255, 0.1)'
-    },
-    headerContent: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '0 1.5rem',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    logo: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem',
-      cursor: 'pointer'
-    },
-    logoIcon: {
-      fontSize: '2.5rem',
-      animation: 'float 3s ease-in-out infinite',
-      filter: 'drop-shadow(0 0 10px rgba(0, 255, 255, 0.5))'
-    },
-    logoText: {
-      fontSize: '2.5rem',
-      fontWeight: 'bold',
-      background: 'linear-gradient(45deg, #00ffff, #8b5cf6, #00ff88, #00ffff)',
-      backgroundSize: '400% 400%',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      animation: 'gradientShift 3s ease-in-out infinite',
-      textShadow: '0 0 20px rgba(0, 255, 255, 0.3)'
-    },
-    subtitle: {
-      fontSize: '0.875rem',
-      color: '#a855f7',
-      fontWeight: '500'
-    },
-    headerRight: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem'
-    },
-    networkBadge: {
-      padding: '0.5rem 1rem',
-      borderRadius: '0.5rem',
-      fontSize: '0.875rem',
-      fontWeight: 'bold',
-      background: chainId === 1043 ? 'linear-gradient(45deg, #10b981, #059669)' : 
-                  'linear-gradient(45deg, #f59e0b, #d97706)',
-      color: 'white'
-    },
-    navigation: {
-      display: 'flex',
-      gap: '0.5rem',
-      alignItems: 'center'
-    },
-    navButton: {
-      padding: '0.5rem 1rem',
-      borderRadius: '0.75rem',
-      border: '2px solid rgba(0, 255, 255, 0.3)',
-      background: 'rgba(0, 0, 0, 0.3)',
-      color: '#d1d5db',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      fontSize: '0.875rem',
-      fontWeight: 'bold'
-    },
-    navButtonActive: {
-      background: 'linear-gradient(45deg, #00ffff, #8b5cf6)',
-      color: 'white',
-      boxShadow: '0 4px 15px rgba(0, 255, 255, 0.3)'
-    },
-    main: {
-      maxWidth: '1400px',
-      margin: '0 auto',
-      padding: selectedFeature === 'dashboard' ? '2rem 1.5rem' : '1rem 1.5rem',
-      minHeight: 'calc(100vh - 80px)'
-    },
-    backButton: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      padding: '0.75rem 1.5rem',
-      borderRadius: '1rem',
-      border: '2px solid rgba(0, 255, 255, 0.3)',
-      background: 'rgba(0, 0, 0, 0.3)',
-      color: '#d1d5db',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      fontSize: '1rem',
-      fontWeight: 'bold',
-      marginBottom: '2rem',
-      maxWidth: 'fit-content'
-    }
-  }
-
   return (
     <NotificationsProvider>
-    <div style={styles.container}>
-      {/* Animated Background Elements */}
-      <div style={{
-        position: 'absolute',
-        top: '10%',
-        left: '10%',
-        width: '200px',
-        height: '200px',
-        background: 'radial-gradient(circle, rgba(0, 255, 255, 0.1) 0%, transparent 70%)',
-        borderRadius: '50%',
-        animation: 'float 6s ease-in-out infinite',
-        zIndex: 1
-      }} />
-      <div style={{
-        position: 'absolute',
-        top: '60%',
-        right: '15%',
-        width: '150px',
-        height: '150px',
-        background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%)',
-        borderRadius: '50%',
-        animation: 'float 8s ease-in-out infinite reverse',
-        zIndex: 1
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '20%',
-        left: '20%',
-        width: '100px',
-        height: '100px',
-        background: 'radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%)',
-        borderRadius: '50%',
-        animation: 'float 10s ease-in-out infinite',
-        zIndex: 1
-      }} />
+      <div className="min-h-screen bg-black text-white relative overflow-hidden">
+        {/* Subtle Background */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1676818038422-1241ccf391bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjeWJlcnB1bmslMjBuZW9uJTIwY2l0eSUyMGRhcmt8ZW58MXx8fHwxNzU4OTkxMTc0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral')`
+          }}
+        />
+        
+        {/* Simple Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20" />
+        
+        {/* Minimal Grid Pattern */}
+        <div 
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(0, 255, 255, 0.5) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(0, 255, 255, 0.5) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px'
+          }}
+        />
 
-      {/* Grid Pattern Overlay */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: `
-          linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: '50px 50px',
-        zIndex: 1
-      }} />
+        {/* Header */}
+        <header className="bg-black/90 backdrop-blur-xl border-b border-cyan-500/20 px-6 py-4 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <motion.div 
+              className="flex items-center space-x-4 cursor-pointer"
+              onClick={() => setSelectedFeature('dashboard')}
+              whileHover={{ scale: 1.02 }}
+            >
+              <motion.div
+                className="text-4xl"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                🚀
+              </motion.div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                  BlockFlight
+                </h1>
+                <p className="text-sm text-gray-400">Market-Driven Prediction Platform</p>
+              </div>
+            </motion.div>
+            
+            <div className="flex items-center space-x-4">
+              {/* Navigation */}
+              <div className="flex space-x-2">
+                <button
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedFeature === 'dashboard' 
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white' 
+                      : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                  }`}
+                  onClick={() => setSelectedFeature('dashboard')}
+                >
+                  🏠 Dashboard
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedFeature === 'market-aviator' 
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white' 
+                      : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                  }`}
+                  onClick={() => setSelectedFeature('market-aviator')}
+                >
+                  ✈️ BlockFlight
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedFeature === 'community-market' 
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white' 
+                      : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                  }`}
+                  onClick={() => setSelectedFeature('community-market')}
+                >
+                  🧠 Market
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedFeature === 'leaderboard' 
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white' 
+                      : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                  }`}
+                  onClick={() => setSelectedFeature('leaderboard')}
+                >
+                  🏆 Leaderboard
+                </button>
+              </div>
 
-      {/* Header */}
-      <header style={styles.header}>
-        <div style={styles.headerContent}>
-          <div style={styles.logo} onClick={() => setSelectedFeature('dashboard')}>
-            <div style={styles.logoIcon}>🚀</div>
-            <div>
-              <div style={styles.logoText}>BlockFlight</div>
-              <div style={styles.subtitle}>Market-Driven Prediction Platform</div>
+              <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                chainId === 1043 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
+                  : 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+              }`}>
+                {chainId === 1043 ? '✅ BlockDAG' : '⚠️ Switch Network'}
+              </div>
+              
+              <NotificationBell />
+              <WalletConnect account={account} setAccount={setAccount} />
             </div>
           </div>
-          
-          <div style={styles.headerRight}>
-            {/* Navigation */}
-            <div style={styles.navigation}>
-              <div
-                style={{
-                  ...styles.navButton,
-                  ...(selectedFeature === 'dashboard' ? styles.navButtonActive : {})
-                }}
-                onClick={() => setSelectedFeature('dashboard')}
-              >
-                🏠 Dashboard
-              </div>
-              <div
-                style={{
-                  ...styles.navButton,
-                  ...(selectedFeature === 'market-aviator' ? styles.navButtonActive : {})
-                }}
-                onClick={() => setSelectedFeature('market-aviator')}
-              >
-                ✈️ BlockFlight
-              </div>
-              <div
-                style={{
-                  ...styles.navButton,
-                  ...(selectedFeature === 'community-market' ? styles.navButtonActive : {})
-                }}
-                onClick={() => setSelectedFeature('community-market')}
-              >
-                🧠 Market
-              </div>
-              <div
-                style={{
-                  ...styles.navButton,
-                  ...(selectedFeature === 'leaderboard' ? styles.navButtonActive : {})
-                }}
-                onClick={() => setSelectedFeature('leaderboard')}
-              >
-                🏆 Leaderboard
-              </div>
-            </div>
+        </header>
 
-            <div style={styles.networkBadge}>
-              {chainId === 1043 ? '✅ BlockDAG' : '⚠️ Switch Network'}
-            </div>
-            <NotificationBell />
-            <WalletConnect account={account} setAccount={setAccount} />
-          </div>
-        </div>
-      </header>
+        {/* Main Content */}
+        <main className="relative z-10">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedFeature}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 1.05 }}
+              transition={{ 
+                duration: 0.5,
+                ease: [0.23, 1, 0.32, 1]
+              }}
+              className="h-full"
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
 
-      {/* Main Content */}
-      <main style={styles.main}>
-        {/* Back Button for individual features */}
-        {selectedFeature !== 'dashboard' && (
-          <div
-            style={styles.backButton}
-            onClick={() => setSelectedFeature('dashboard')}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(0, 255, 255, 0.1)'
-              e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.6)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.3)'
-              e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.3)'
-            }}
-          >
-            ← Back to Dashboard
-          </div>
-        )}
-
-        {/* Selected Feature */}
-        {renderFeature()}
-      </main>
-
-      {/* Global Styles */}
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(5deg); }
-        }
-        
-        @keyframes gradientShift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.05); }
-        }
-        
-        @keyframes glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
-          50% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6); }
-        }
-
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-
-        * {
-          box-sizing: border-box;
-        }
-
-        body {
-          margin: 0;
-          overflow-x: hidden;
-          font-family: 'Inter', system-ui, sans-serif;
-        }
-
-        button:hover {
-          transform: translateY(-2px);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .feature-card:hover {
-          transform: translateY(-8px) scale(1.02);
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.3);
-        }
-        ::-webkit-scrollbar-thumb {
-          background: linear-gradient(45deg, #00ffff, #8b5cf6);
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(45deg, #22d3ee, #a855f7);
-        }
-      `}</style>
-    </div>
+        {/* Subtle Ambient Glow */}
+        <div className="fixed top-20 left-10 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="fixed bottom-20 right-10 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+      </div>
     </NotificationsProvider>
   )
 }
