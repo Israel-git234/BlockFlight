@@ -6,6 +6,7 @@ import CruiseMode from './features/CruiseMode'
 import TradingPools from './features/TradingPools'
 import NFTRewards from './features/NFTRewards'
 import CommunityMarket from './features/CommunityMarket'
+import AIOracle from './features/AIOracle'
 
 // Components
 import WalletConnect from './components/WalletConnect'
@@ -55,6 +56,14 @@ function App() {
       color: 'from-red-500 to-orange-500'
     },
     {
+      id: 'ai-oracle',
+      name: 'AI Oracle',
+      description: 'AI-powered market analysis and cross-chain predictions',
+      icon: '🔮',
+      status: 'Live',
+      color: 'from-purple-500 to-indigo-500'
+    },
+    {
       id: 'community-market',
       name: 'Community Market',
       description: 'Create and bet on custom real‑world predictions',
@@ -92,6 +101,8 @@ function App() {
     switch (selectedFeature) {
       case 'market-aviator':
         return <MarketAviator account={account} chainId={chainId} />
+      case 'ai-oracle':
+        return <AIOracle />
       case 'cruise-mode':
         return <CruiseMode account={account} chainId={chainId} />
       case 'community-market':
