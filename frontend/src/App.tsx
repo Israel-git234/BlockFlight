@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 
 // Feature Components
 import MarketAviator from './features/MarketAviator'
@@ -14,40 +14,38 @@ import { NotificationsProvider } from './components/NotificationsProvider'
 import NotificationBell from './components/NotificationBell'
 
 function App() {
-  const [selectedFeature, setSelectedFeature] = useState<string>('market-aviator')
+  const [selectedFeature, setSelectedFeature] = useState<string>('')
   const [account, setAccount] = useState<string | null>(null)
-  const [chainId, setChainId] = useState<number | null>(null)
+  const [chainId, setChainId] = useState<string | null>(null)
 
-  // MetaMask connection handler
+  // MetaMask connection handler with cleanup
   useEffect(() => {
-    if (window.ethereum) {
-      // Check if already connected
-      window.ethereum.request({ method: 'eth_accounts' })
-        .then((accounts: string[]) => {
-          if (accounts.length > 0) {
-            setAccount(accounts[0])
-          }
-        })
+    const eth = (window as any).ethereum
+    if (!eth) return
 
-      // Listen for account changes
-      window.ethereum.on('accountsChanged', (accounts: string[]) => {
-        setAccount(accounts[0] || null)
-      })
+    eth.request({ method: 'eth_accounts' })
+      .then((accounts: string[]) => { if (accounts.length > 0) setAccount(accounts[0]) })
+      .catch(() => {})
 
-      // Listen for chain changes
-      window.ethereum.on('chainChanged', (chainId: string) => {
-        setChainId(parseInt(chainId, 16))
-      })
+    const onAccountsChanged = (accounts: string[]) => setAccount(accounts[0] || null)
+    const onChainChanged = (cid: string) => setChainId(cid)
 
-      // Get current chain ID
-      window.ethereum.request({ method: 'eth_chainId' })
-        .then((chainId: string) => {
-          setChainId(parseInt(chainId, 16))
-        })
+    eth.on?.('accountsChanged', onAccountsChanged)
+    eth.on?.('chainChanged', onChainChanged)
+
+    eth.request({ method: 'eth_chainId' })
+      .then((cid: string) => setChainId(cid))
+      .catch(() => {})
+
+    return () => {
+      try {
+        eth.removeListener?.('accountsChanged', onAccountsChanged)
+        eth.removeListener?.('chainChanged', onChainChanged)
+      } catch {}
     }
   }, [])
 
-  const features = [
+  const features: Array<{ id: string; name: string; description: string; icon: string; status: 'Live' | 'Coming Soon'; color: string }> = [
     {
       id: 'market-aviator',
       name: 'Market Aviator',
@@ -110,23 +108,24 @@ function App() {
   const styles = {
     container: {
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a, #1e293b, #7c3aed, #1e293b, #0f172a)',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #0e7490 50%, #1e293b 75%, #0f172a 100%)',
       color: 'white',
-      fontFamily: 'system-ui, sans-serif'
+      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     },
     header: {
-      background: 'rgba(0,0,0,0.8)',
-      backdropFilter: 'blur(10px)',
-      borderBottom: '1px solid rgba(124, 58, 237, 0.3)',
-      padding: '1rem 0',
+      background: 'rgba(0, 0, 0, 0.9)',
+      backdropFilter: 'blur(20px)',
+      borderBottom: '1px solid rgba(8, 145, 178, 0.3)',
+      padding: '1.5rem 0',
       position: 'sticky' as const,
       top: 0,
-      zIndex: 100
+      zIndex: 100,
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
     },
     headerContent: {
-      maxWidth: '1200px',
+      maxWidth: '1400px',
       margin: '0 auto',
-      padding: '0 1.5rem',
+      padding: '0 2rem',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center'
@@ -134,45 +133,93 @@ function App() {
     logo: {
       display: 'flex',
       alignItems: 'center',
-      gap: '1rem'
+      gap: '1.5rem'
     },
     logoIcon: {
-      fontSize: '2.5rem',
-      animation: 'float 3s ease-in-out infinite'
+      fontSize: '3rem',
+      animation: 'float 3s ease-in-out infinite',
+      filter: 'drop-shadow(0 0 10px rgba(8, 145, 178, 0.5))'
     },
     logoText: {
-      fontSize: '2.5rem',
+      fontSize: '2.75rem',
       fontWeight: 'bold',
-      background: 'linear-gradient(45deg, #7c3aed, #ec4899, #3b82f6)',
+      background: 'linear-gradient(45deg, #0891b2, #0e7490, #0891b2)',
       WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent'
+      WebkitTextFillColor: 'transparent',
+      textShadow: '0 0 30px rgba(8, 145, 178, 0.3)'
     },
     subtitle: {
-      fontSize: '0.875rem',
-      color: '#a855f7',
-      fontWeight: '500'
+      fontSize: '1rem',
+      color: '#0891b2',
+      fontWeight: '500',
+      marginTop: '0.25rem'
     },
     headerRight: {
       display: 'flex',
       alignItems: 'center',
-      gap: '1rem'
+      gap: '1.5rem'
     },
     networkBadge: {
-      padding: '0.5rem 1rem',
-      borderRadius: '0.5rem',
+      padding: '0.75rem 1.25rem',
+      borderRadius: '0.75rem',
       fontSize: '0.875rem',
       fontWeight: 'bold',
-      background: chainId === 1043 ? 'linear-gradient(45deg, #10b981, #059669)' : 
+      background: chainId === '0x413' ? 'linear-gradient(45deg, #10b981, #059669)' : 
                   'linear-gradient(45deg, #f59e0b, #d97706)',
-      color: 'white'
+      color: 'white',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.1)'
     },
     main: {
       maxWidth: '1400px',
       margin: '0 auto',
-      padding: '2rem 1.5rem'
+      padding: '3rem 2rem'
     },
     featureSelectorWrapper: {
       marginBottom: '2rem'
+    },
+    hero: {
+      textAlign: 'center' as const,
+      marginBottom: '4rem',
+      padding: '2rem 0'
+    },
+    heroTitle: {
+      fontSize: '3.5rem',
+      fontWeight: 'bold',
+      background: 'linear-gradient(45deg, #ffffff, #0891b2, #ffffff)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      marginBottom: '1rem',
+      lineHeight: '1.1'
+    },
+    heroSubtitle: {
+      fontSize: '1.25rem',
+      color: '#9ca3af',
+      maxWidth: '600px',
+      margin: '0 auto 2rem',
+      lineHeight: '1.6'
+    },
+    stats: {
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '3rem',
+      marginBottom: '3rem',
+      flexWrap: 'wrap' as const
+    },
+    stat: {
+      textAlign: 'center' as const
+    },
+    statValue: {
+      fontSize: '2rem',
+      fontWeight: 'bold',
+      color: '#0891b2',
+      marginBottom: '0.5rem'
+    },
+    statLabel: {
+      fontSize: '0.875rem',
+      color: '#6b7280',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.05em'
     }
   }
 
@@ -190,18 +237,48 @@ function App() {
             </div>
           </div>
           
-          <div style={styles.headerRight}>
-            <div style={styles.networkBadge}>
-              {chainId === 1043 ? '✅ BlockDAG' : '⚠️ Switch Network'}
+          {
+            <div style={styles.headerRight}>
+              <div style={styles.networkBadge}>
+                {chainId === '0x413' ? '✅ BlockDAG' : '⚠️ Switch Network'}
+              </div>
+              <NotificationBell />
+              <WalletConnect account={account} setAccount={setAccount} chainId={chainId} setChainId={setChainId} />
             </div>
-            <NotificationBell />
-            <WalletConnect account={account} setAccount={setAccount} />
-          </div>
+          }
         </div>
       </header>
 
       {/* Main Content */}
       <main style={styles.main}>
+        {/* Hero Section */}
+        <div style={styles.hero}>
+          <h1 style={styles.heroTitle}>Advanced Trading Platform</h1>
+          <p style={styles.heroSubtitle}>
+            Experience the future of decentralized prediction markets with BlockDAG technology. 
+            Fast, secure, and transparent trading for everyone.
+          </p>
+          
+          <div style={styles.stats}>
+            <div style={styles.stat}>
+              <div style={styles.statValue}>$2.4M</div>
+              <div style={styles.statLabel}>24h Volume</div>
+            </div>
+            <div style={styles.stat}>
+              <div style={styles.statValue}>1,847</div>
+              <div style={styles.statLabel}>Active Traders</div>
+            </div>
+            <div style={styles.stat}>
+              <div style={styles.statValue}>&lt;100ms</div>
+              <div style={styles.statLabel}>Transaction Speed</div>
+            </div>
+            <div style={styles.stat}>
+              <div style={styles.statValue}>$50M+</div>
+              <div style={styles.statLabel}>TVL Secured</div>
+            </div>
+          </div>
+        </div>
+
         {/* Feature Selector */}
         <div style={styles.featureSelectorWrapper}>
           <FeatureSelector 
@@ -212,7 +289,7 @@ function App() {
         </div>
 
         {/* Selected Feature */}
-        {renderFeature()}
+        {selectedFeature && renderFeature()}
       </main>
 
       {/* Global Styles */}

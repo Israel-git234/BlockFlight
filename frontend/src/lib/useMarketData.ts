@@ -17,6 +17,7 @@ export type MarketSnapshot = {
 }
 
 const COINGECKO_URL = '/api/coingecko/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+const CRYPTOCOMPARE_URL = '/api/cryptocompare/data/price?fsym=ETH&tsyms=USD'
 
 async function fetchCoingecko(): Promise<number> {
   const res = await fetch(COINGECKO_URL, { cache: 'no-store' })
@@ -40,6 +41,8 @@ export function useMarketData(pollMs = 15000): MarketSnapshot {
   const [emaLong, setEmaLong] = useState<number | null>(null)
   const [health, setHealth] = useState<MarketHealth>({ source: 'simulated', healthy: true, lastUpdated: null })
   const historyRef = useRef<{ t: number; p: number }[]>([])
+  const nextDelayRef = useRef<number>(pollMs)
+  const failCountRef = useRef<number>(0)
 
   // Poll market price with fallbacks
   useEffect(() => {
@@ -47,23 +50,37 @@ export function useMarketData(pollMs = 15000): MarketSnapshot {
     let timer: any
     const poll = async () => {
       try {
-        const p = await fetchCoingecko()
+        const res = await fetch(COINGECKO_URL, { cache: 'no-store' })
+        if (res.status === 429) throw new Error('rate_limited')
+        if (!res.ok) throw new Error(`coingecko ${res.status}`)
+        const data = await res.json()
+        const p = data?.ethereum?.usd
+        if (typeof p !== 'number') throw new Error('coingecko bad payload')
         if (!mounted) return
         setPriceUsd(p)
         setHealth({ source: 'coingecko', healthy: true, lastUpdated: Date.now() })
+        nextDelayRef.current = pollMs
+        failCountRef.current = 0
       } catch (e: any) {
         try {
-          const p2 = await fetchViaProxy()
-          if (!mounted) return
+          const r2 = await fetch(CRYPTOCOMPARE_URL, { cache: 'no-store' })
+          if (!r2.ok) throw new Error(`cc ${r2.status}`)
+          const d2 = await r2.json()
+          const p2 = d2?.USD
+          if (typeof p2 !== 'number') throw new Error('cc bad payload')
           setPriceUsd(p2)
           setHealth({ source: 'proxy', healthy: true, lastUpdated: Date.now() })
+          nextDelayRef.current = pollMs
         } catch (e2: any) {
-          // simulate gentle random walk as a last resort
+          // backoff on errors/429, simulate locally
+          failCountRef.current += 1
+          const backoff = Math.min(60000, pollMs * Math.pow(2, Math.min(3, failCountRef.current - 1)))
+          nextDelayRef.current = backoff
           setPriceUsd(prev => Math.max(1000, prev * (1 + (Math.random() - 0.5) * 0.002)))
-          setHealth({ source: 'simulated', healthy: false, lastUpdated: Date.now(), error: (e2?.message || 'simulated') })
+          setHealth({ source: 'simulated', healthy: false, lastUpdated: Date.now(), error: e?.message || e2?.message || 'simulated' })
         }
       }
-      timer = setTimeout(poll, pollMs)
+      timer = setTimeout(poll, nextDelayRef.current)
     }
     poll()
     return () => { mounted = false; if (timer) clearTimeout(timer) }

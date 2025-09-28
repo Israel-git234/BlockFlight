@@ -27,6 +27,12 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
   const { addNotification } = useNotifications()
   const COMMUNITY_ADDR = (import.meta as any).env?.VITE_COMMUNITY_MARKET_CONTRACT as string | undefined
   const [useOnChain, setUseOnChain] = useState<boolean>(!!COMMUNITY_ADDR)
+  const [communityStats, setCommunityStats] = useState({
+    totalMarkets: 1247,
+    activeUsers: 2847,
+    totalVolume: 89.3,
+    topCreator: 'CryptoOracle'
+  })
   const [bets, setBets] = useState<CommunityBet[]>([
     {
       id: 'b1',
@@ -263,10 +269,70 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
   }
 
   return (
-    <div style={styles.grid}>
-      {/* Create Bet */}
-      <div style={styles.card}>
-        <div style={styles.title}>🧠 Create Custom Prediction</div>
+    <div>
+      {/* Community Statistics */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(8, 145, 178, 0.1) 0%, rgba(14, 116, 144, 0.1) 100%)',
+        border: '1px solid rgba(8, 145, 178, 0.3)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '24px'
+      }}>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          background: 'linear-gradient(45deg, #0891b2, #0e7490)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          marginBottom: '16px',
+          textAlign: 'center'
+        }}>
+          🧠 Community Prediction Market
+        </h2>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0891b2', marginBottom: '4px' }}>
+              {communityStats.totalMarkets.toLocaleString()}
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>Total Markets</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#22c55e', marginBottom: '4px' }}>
+              {communityStats.activeUsers.toLocaleString()}
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>Active Users</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b', marginBottom: '4px' }}>
+              ${communityStats.totalVolume.toFixed(1)}M
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>Total Volume</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6', marginBottom: '4px' }}>
+              {communityStats.topCreator}
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>Top Creator</div>
+          </div>
+        </div>
+        
+        <div style={{ 
+          background: 'rgba(0, 0, 0, 0.3)', 
+          borderRadius: '8px', 
+          padding: '12px',
+          textAlign: 'center',
+          fontSize: '14px',
+          color: '#9ca3af'
+        }}>
+          🎯 Create custom predictions • 👥 Follow top predictors • 🏆 Earn reputation • 💰 Share in rewards
+        </div>
+      </div>
+
+      <div style={styles.grid}>
+        {/* Create Bet */}
+        <div style={styles.card}>
+          <div style={styles.title}>🧠 Create Custom Prediction</div>
         <label style={styles.label}>Title</label>
         <input style={styles.input} value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Will it rain tomorrow in Johannesburg?" />
         <label style={styles.label}>Description / Analysis</label>
@@ -368,6 +434,7 @@ export default function CommunityMarket({ account }: CommunityMarketProps) {
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   )

@@ -1,6 +1,8 @@
+import React from 'react'
+
 interface TradingPoolsProps {
   account: string | null
-  chainId: number | null
+  chainId: string | null
 }
 
 export default function TradingPools({ account, chainId }: TradingPoolsProps) {

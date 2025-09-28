@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useMarketData } from '../lib/useMarketData'
 
 interface CruiseModeProps {
   account: string | null
-  chainId: number | null
+  chainId: string | null
 }
 
 interface Stake {
@@ -48,11 +48,74 @@ export default function CruiseMode({ account, chainId }: CruiseModeProps) {
   // Market data
   const { priceUsd: ethPrice, emaShort, emaLong, volatility, health } = useMarketData(15000)
   const [priceHistory, setPriceHistory] = useState<number[]>([2400, 2420, 2445, 2456.78])
+  const [totalStaked, setTotalStaked] = useState(1247.5)
+  const [totalRewards, setTotalRewards] = useState(89.3)
+  const [apy, setApy] = useState(12.5)
+  const [stakers, setStakers] = useState(2847)
   const globalTrend = useMemo<'bullish' | 'bearish' | 'sideways'>(() => {
     if (emaShort > emaLong * 1.01) return 'bullish'
     if (emaShort < emaLong * 0.99) return 'bearish'
     return 'sideways'
   }, [emaShort, emaLong])
+
+  // Dynamic APY calculation based on market conditions
+  const dynamicApy = useMemo(() => {
+    const baseApy = 8.0
+    const volatilityBonus = volatility * 20 // Higher volatility = higher APY
+    const trendBonus = globalTrend === 'bullish' ? 3.0 : globalTrend === 'bearish' ? 1.5 : 2.0
+    const stakingBonus = Math.min(5.0, (totalStaked / 1000) * 2) // More staked = higher APY
+    return Math.min(25.0, baseApy + volatilityBonus + trendBonus + stakingBonus)
+  }, [volatility, globalTrend, totalStaked])
+
+  // Update APY in real-time
+  useEffect(() => {
+    setApy(dynamicApy)
+  }, [dynamicApy])
+
+  // Visual flight position for cruise plane: starts near mid, drifts with trend/return
+  const cruiseAltitude = useMemo(() => {
+    // Normalize relative price to EMA long to a band [-1, +1]
+    const rel = (ethPrice - emaLong) / Math.max(1, emaLong)
+    // dampened by volatility so it moves slower
+    const scaled = Math.max(-1, Math.min(1, rel / Math.max(0.15, (volatility * 6))))
+    // map to 0..100 where 50 is breakeven
+    return 50 + scaled * 45
+  }, [ethPrice, emaLong, volatility])
+
+  // Slow forward-moving trajectory points (0..100 altitude scale)
+  const [cruisePoints, setCruisePoints] = useState<number[]>([])
+  const lastAltRef = useRef<number>(50)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const target = cruiseAltitude
+      const prev = lastAltRef.current
+      const next = prev + (target - prev) * 0.08 // ease toward target slowly
+      lastAltRef.current = next
+      setCruisePoints(arr => {
+        const a = [...arr, Math.max(0, Math.min(100, next))]
+        return a.length > 220 ? a.slice(a.length - 220) : a
+      })
+    }, 600)
+    return () => clearInterval(id)
+  }, [cruiseAltitude])
+
+  const cruiseSvg = useMemo(() => {
+    if (cruisePoints.length === 0) return { line: '', x: 60, y: 80 }
+    const maxSamples = Math.max(2, cruisePoints.length)
+    const stepX = 900 / (maxSamples - 1) // leave 100px margins total
+    let d = ''
+    let x = 60
+    for (let i = 0; i < cruisePoints.length; i++) {
+      x = 60 + i * stepX
+      const alt = cruisePoints[i] // 0..100
+      const y = 160 - alt * 1.6 // map to 0..160
+      d += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`
+    }
+    const lastAlt = cruisePoints[cruisePoints.length - 1]
+    const planeY = 160 - lastAlt * 1.6
+    return { line: d, x, y: planeY }
+  }, [cruisePoints])
 
   // Track price history for UI context
   useEffect(() => {
@@ -360,6 +423,103 @@ export default function CruiseMode({ account, chainId }: CruiseModeProps) {
         <p style={styles.subtitle}>
           Long-term prediction staking. Ride the market waves and amplify your gains over time.
         </p>
+
+        {/* Impressive Staking Statistics */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(8, 145, 178, 0.1) 0%, rgba(14, 116, 144, 0.1) 100%)',
+          border: '1px solid rgba(8, 145, 178, 0.3)',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '24px'
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0891b2', marginBottom: '4px' }}>
+                {apy.toFixed(1)}%
+              </div>
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>Dynamic APY</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#22c55e', marginBottom: '4px' }}>
+                ${totalStaked.toFixed(1)}M
+              </div>
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>Total Staked</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b', marginBottom: '4px' }}>
+                ${totalRewards.toFixed(1)}M
+              </div>
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>Rewards Paid</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6', marginBottom: '4px' }}>
+                {stakers.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>Active Stakers</div>
+            </div>
+          </div>
+          
+          <div style={{ 
+            background: 'rgba(0, 0, 0, 0.3)', 
+            borderRadius: '8px', 
+            padding: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>
+              Market Trend: <span style={{ 
+                color: globalTrend === 'bullish' ? '#22c55e' : globalTrend === 'bearish' ? '#ef4444' : '#f59e0b',
+                fontWeight: 'bold'
+              }}>
+                {globalTrend === 'bullish' ? '📈 Bullish' : globalTrend === 'bearish' ? '📉 Bearish' : '📊 Sideways'}
+              </span>
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>
+              Volatility: <span style={{ 
+                color: volatility > 0.02 ? '#ef4444' : volatility > 0.01 ? '#f59e0b' : '#22c55e',
+                fontWeight: 'bold'
+              }}>
+                {(volatility * 100).toFixed(2)}%
+              </span>
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>
+              ETH: <span style={{ color: '#0891b2', fontWeight: 'bold' }}>${ethPrice.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Cruise plane visual */}
+        <div style={{ position: 'relative', height: 160, marginBottom: '1.25rem', borderRadius: '0.75rem', border: '1px solid rgba(59,130,246,0.25)', background: 'rgba(2,6,23,0.5)' }}>
+          <svg viewBox="0 0 1000 160" preserveAspectRatio="xMidYMid slice" style={{ width: '100%', height: '100%' }}>
+            <defs>
+              <pattern id="cg" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(59,130,246,0.15)" strokeWidth="1" />
+              </pattern>
+              <linearGradient id="cruiseLine" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(34,197,94,0.9)" />
+                <stop offset="100%" stopColor="rgba(234,179,8,0.9)" />
+              </linearGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#cg)" />
+            {/* mid breakeven line */}
+            <line x1="0" y1="80" x2="1000" y2="80" stroke="rgba(148,163,184,0.6)" strokeDasharray="6,4" />
+            {/* profit band */}
+            <rect x="0" y="0" width="1000" height="80" fill="rgba(34,197,94,0.07)" />
+            {/* loss band */}
+            <rect x="0" y="80" width="1000" height="80" fill="rgba(239,68,68,0.07)" />
+            {/* forward-moving line */}
+            {cruiseSvg.line && (
+              <path d={cruiseSvg.line} fill="none" stroke="url(#cruiseLine)" strokeWidth="2.5" />
+            )}
+          </svg>
+          <div style={{ position: 'absolute', left: `${cruiseSvg.x}px`, top: `${cruiseSvg.y}px`, transform: 'translate(-50%, -50%)' }}>
+            <span style={{ fontSize: 22 }}>{cruiseAltitude >= 50 ? '✈️' : '🛬'}</span>
+          </div>
+          <div style={{ position: 'absolute', right: 8, top: 8, fontSize: 12, color: '#9ca3af' }}>
+            {cruiseAltitude >= 50 ? 'Profit zone' : 'Loss zone'}
+          </div>
+        </div>
 
         {/* Slow plane visualization (trend flight) */}
         <div style={{

@@ -16,3 +16,35 @@ Note: This will impact Vite dev & build performances.
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Local run (dev)
+
+1) Install dependencies
+
+```powershell
+& "C:\\Program Files\\nodejs\\npm.cmd" --prefix "%USERPROFILE%\\Downloads\\BlockFlight\\frontend" install
+```
+
+2) Start Vite
+
+```powershell
+& "C:\\Program Files\\nodejs\\npm.cmd" --prefix "%USERPROFILE%\\Downloads\\BlockFlight\\frontend" run dev
+```
+
+Open http://localhost:5173
+
+## MetaMask
+- Install MetaMask and allow the site.
+- Click "Connect Wallet". The app will:
+  - request accounts
+  - switch to BlockDAG Testnet (1043) or prompt to add it if missing
+- If switching fails, you can add the network manually:
+  - Chain ID: 1043 (0x413)
+  - RPC: https://rpc.blockdag.network
+  - Currency: BDAG (18)
+  - Explorer: https://explorer.blockdag.network
+
+## Notes
+- Market data is proxied via Vite at `/api/coingecko/...` to avoid CORS during dev.
+- Market Aviator: 10s pause between rounds; flight path responds to EMA/volatility.
+- Cruise Mode: slow trajectory around breakeven midline; profit/loss bands.
