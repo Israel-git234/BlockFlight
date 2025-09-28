@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useMarketData } from '../lib/useMarketData'
 
 interface CruiseModeProps {
   account: string | null
@@ -45,33 +46,18 @@ export default function CruiseMode({ account, chainId }: CruiseModeProps) {
   ])
 
   // Market data
-  const [ethPrice, setEthPrice] = useState(2456.78)
+  const { priceUsd: ethPrice, emaShort, emaLong, volatility, health } = useMarketData(15000)
   const [priceHistory, setPriceHistory] = useState<number[]>([2400, 2420, 2445, 2456.78])
-  const [globalTrend, setGlobalTrend] = useState<'bullish' | 'bearish' | 'sideways'>('bullish')
+  const globalTrend = useMemo<'bullish' | 'bearish' | 'sideways'>(() => {
+    if (emaShort > emaLong * 1.01) return 'bullish'
+    if (emaShort < emaLong * 0.99) return 'bearish'
+    return 'sideways'
+  }, [emaShort, emaLong])
 
-  // Market simulation
+  // Track price history for UI context
   useEffect(() => {
-    const interval = setInterval(() => {
-      setEthPrice(prev => {
-        const change = (Math.random() - 0.5) * 0.03 // ±1.5% change
-        const newPrice = prev * (1 + change)
-        
-        // Update price history
-        setPriceHistory(history => [...history.slice(-23), newPrice])
-        
-        // Determine global trend
-        const recent = priceHistory.slice(-5)
-        const avg = recent.reduce((a, b) => a + b, 0) / recent.length
-        if (newPrice > avg * 1.02) setGlobalTrend('bullish')
-        else if (newPrice < avg * 0.98) setGlobalTrend('bearish')
-        else setGlobalTrend('sideways')
-        
-        return newPrice
-      })
-    }, 3000)
-    
-    return () => clearInterval(interval)
-  }, [priceHistory])
+    setPriceHistory(history => [...history.slice(-23), ethPrice])
+  }, [ethPrice])
 
   // Update stake values based on market movement
   useEffect(() => {
@@ -100,7 +86,8 @@ export default function CruiseMode({ account, chainId }: CruiseModeProps) {
       
       // Calculate current value
       const baseValue = stake.amount * trendMultiplier * timeBonus
-      const volatilityRisk = Math.random() * 0.05 - 0.025 // ±2.5% random volatility
+      const volAdj = Math.min(0.15, volatility * 5)
+      const volatilityRisk = (Math.random() * volAdj) - (volAdj / 2)
       
       stake.currentValue = Math.max(0.1, baseValue * (1 + volatilityRisk))
       
@@ -374,12 +361,58 @@ export default function CruiseMode({ account, chainId }: CruiseModeProps) {
           Long-term prediction staking. Ride the market waves and amplify your gains over time.
         </p>
 
+        {/* Slow plane visualization (trend flight) */}
+        <div style={{
+          marginBottom: '1.5rem',
+          background: 'rgba(0,0,0,0.3)',
+          border: '1px solid rgba(59,130,246,0.3)',
+          borderRadius: '0.75rem',
+          overflow: 'hidden'
+        }}>
+          <svg viewBox="0 0 600 160" width="100%" height="160">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#06b6d4"/>
+                <stop offset="100%" stopColor="#7c3aed"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="600" height="160" fill="rgba(2,6,23,0.4)"/>
+            <g opacity="0.2">
+              {[1,2,3].map((i) => (
+                <line key={i} x1="0" y1={160 - i*40} x2="600" y2={160 - i*40} stroke="#334155" strokeDasharray="4 4" />
+              ))}
+            </g>
+            {/* Trend path */}
+            <path d={`M 20 ${120 - Math.min(40, Math.max(-40, (emaShort-emaLong))) } L 580 ${120 - Math.min(40, Math.max(-40, (emaShort-emaLong))) }`} stroke="url(#g)" strokeWidth="2" fill="none" />
+            {/* Plane icon */}
+            <text x="560" y={124 - Math.min(40, Math.max(-40, (emaShort-emaLong))) } fontSize="18">✈️</text>
+          </svg>
+          <div style={{ display:'flex', justifyContent:'space-between', padding:'0.5rem 1rem', fontSize:12, color:'#9ca3af' }}>
+            <div>EMA Short {emaShort.toFixed(2)}</div>
+            <div>EMA Long {emaLong.toFixed(2)}</div>
+            <div>Volatility {(volatility*100).toFixed(2)}%</div>
+          </div>
+        </div>
+
         {/* Market Trend Indicator */}
         <div style={styles.marketTrend}>
           <div style={styles.sectionTitle}>📊 Market Analysis</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <span>ETH Price:</span>
             <span style={{ fontWeight: 'bold' }}>${ethPrice.toFixed(2)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <span>Trend (EMA):</span>
+            <span style={{ fontWeight: 'bold', color: globalTrend === 'bullish' ? '#22c55e' : globalTrend === 'bearish' ? '#ef4444' : '#f59e0b' }}>
+              {emaShort.toFixed(2)} / {emaLong.toFixed(2)}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <span>Volatility:</span>
+            <span style={{ fontWeight: 'bold' }}>{(volatility * 100).toFixed(2)}%</span>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: health.healthy ? '#22c55e' : '#f59e0b' }}>
+            Source: {health.source}{!health.healthy ? ' (fallback)' : ''}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <span>Global Trend:</span>
