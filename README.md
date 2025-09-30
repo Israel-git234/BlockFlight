@@ -179,7 +179,7 @@ npm run build
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions as we believe this project is big and can be made to something even bigger! 
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -187,9 +187,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🏆 Hackathon Project
 
@@ -203,17 +201,8 @@ This project was developed for the **BlockDAG Hackathon** and showcases:
 
 ## 📞 Support
 
-- **Documentation**: [Wiki](https://github.com/yourusername/blockdag-trading-platform/wiki)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/blockdag-trading-platform/issues)
-- **Discord**: [Community Server](https://discord.gg/blockdag)
-- **Twitter**: [@BlockDAGTrading](https://twitter.com/blockdag)
+-email: Israelmathivha2@gmail.com
 
-## 🙏 Acknowledgments
-
-- **BlockDAG Team** for the innovative blockchain technology
-- **React Community** for the excellent development framework
-- **DeFi Community** for inspiration and feedback
-- **Hackathon Judges** for the opportunity to showcase this project
 
 ---
 
